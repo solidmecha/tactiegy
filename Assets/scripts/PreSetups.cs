@@ -17,6 +17,13 @@ public class PreSetups : MonoBehaviour {
     public void Setup()
     {
         PiecesSet = false;
+        foreach(PieceScript p in GameControl.singleton.Pieces)
+        {
+            for(int i=0;i<8;i++)
+            {
+                p.UpdateMoveIndex(false, false, i);
+            }
+        }
         FixedPower = 5 < GameControl.singleton.RNG.Next(10);
         SetBoardSize();
         SetFlags();
