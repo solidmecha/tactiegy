@@ -56,6 +56,8 @@ public class BotScript : MonoBehaviour {
 
 						}
                     }
+                    if (hasMoved)
+                        return;
                     HighAtkIndex = -1;
                     HighAtkValue = -1;
 					foreach (GamePieceReference g in GameControl.singleton.GamePiecesOnBoard)
@@ -64,15 +66,21 @@ public class BotScript : MonoBehaviour {
 						{
 							foreach (int[] ia in g.PossibleMoves())
 							{
-								int tv = FindThreatValue(ia, g);
-								if (HighAtkValue < tv)
-								{
-									MovePostions.Add(ia);
-									gamePieces.Add(g);
-									actionTypes.Add(ActionType.Move);
-									HighAtkValue = tv;
-									HighAtkIndex = MovePostions.Count - 1;
-								}
+                                if (EnemyPowerGrid[ia[0]][ia[1]].Count == 0 ||
+                (EnemyValsAttackingPieceValCheck(ia, GameControl.singleton.Pieces[g.index].Value) &&
+                    (EnemyPowerGrid[ia[0]][ia[1]].Count < PowerGrid[ia[0]][ia[1]].Count ||
+                    (EnemyPowerGrid[ia[0]][ia[1]].Count == PowerGrid[ia[0]][ia[1]].Count && PowerGridContainsOtherPiece(ia, g)))))
+                                {
+                                    int tv = FindThreatValue(ia, g);
+                                    if (HighAtkValue < tv)
+                                    {
+                                        MovePostions.Add(ia);
+                                        gamePieces.Add(g);
+                                        actionTypes.Add(ActionType.Move);
+                                        HighAtkValue = tv;
+                                        HighAtkIndex = MovePostions.Count - 1;
+                                    }
+                                }
 							}
 						}
 					}
@@ -299,6 +307,7 @@ public class BotScript : MonoBehaviour {
 					MovePostions.Add(ia);
 					gamePieces.Add(GPR);
 					actionTypes.Add(ActionType.Move);
+                    print("here");
 				}
 			}
 			if (currentIndex < MovePostions.Count - 1)
@@ -446,7 +455,8 @@ public class BotScript : MonoBehaviour {
 			GameControl.singleton.SelectedPiece = gamePieces[index].gameObject;
 			GameControl.singleton.Capture(Physics2D.Raycast((Vector2)transform.position + new Vector2(MovePostions[index][0] +.5f, MovePostions[index][1]+.5f), Vector2.zero).collider.GetComponent<GamePieceReference>());
 		}
-	}
+        GameControl.singleton.IncActions();
+    }
 
 	void Awake() {
 		singleton = this;

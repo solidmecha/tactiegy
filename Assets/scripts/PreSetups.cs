@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 public class PreSetups : MonoBehaviour {
 
@@ -11,7 +12,7 @@ public class PreSetups : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        Setup();
+        GameControl.singleton.SeedVal.text = GameControl.singleton.RNG.Next(0, Int32.MaxValue).ToString(); ;
     }
 
     public void Setup()
@@ -528,8 +529,8 @@ public class PreSetups : MonoBehaviour {
         GameControl.singleton.Pieces[PieceIndex].name = "Queen";
         if (!FixedPower)
         {
-            GameControl.singleton.Pieces[PieceIndex].Atk = GameControl.singleton.RNG.Next(1, 5);
-            GameControl.singleton.Pieces[PieceIndex].Def = GameControl.singleton.RNG.Next(1, 5);
+            GameControl.singleton.Pieces[PieceIndex].Atk = 1;//GameControl.singleton.RNG.Next(1, 5);
+            GameControl.singleton.Pieces[PieceIndex].Def = 9;// GameControl.singleton.RNG.Next(1, 5);
         }
         SetAnti(PieceIndex, AntiIndex);
         GameControl.singleton.Pieces[PieceIndex].UpdateAll();

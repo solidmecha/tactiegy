@@ -65,12 +65,15 @@ public class BoardPlacement : MonoBehaviour {
             }
             else
             {
-                Flag.transform.position = (Vector2)transform.position + new Vector2(x + .5f, y + .5f);
-                Flag.GetComponent<GamePieceReference>().BoardPos[0] = x;
-                Flag.GetComponent<GamePieceReference>().BoardPos[1] = y;
-                MovingFlag = false;
-                PieceEditor.singleton.Outline.transform.position = PieceEditor.singleton.SelectedPiece.transform.position;
-                Flag = null;
+                if (x < (int)GameControl.singleton.BoardSizeSlider.value && y < (int)GameControl.singleton.BoardSizeSlider.value)
+                {
+                    Flag.transform.position = (Vector2)transform.position + new Vector2(x + .5f, y + .5f);
+                    Flag.GetComponent<GamePieceReference>().BoardPos[0] = x;
+                    Flag.GetComponent<GamePieceReference>().BoardPos[1] = y;
+                    MovingFlag = false;
+                    PieceEditor.singleton.Outline.transform.position = PieceEditor.singleton.SelectedPiece.transform.position;
+                    Flag = null;
+                }
 
             }
             GetComponent<BoxCollider2D>().enabled = true;

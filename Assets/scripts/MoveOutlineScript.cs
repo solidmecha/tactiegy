@@ -12,5 +12,6 @@ private void OnMouseDown()
         GameControl.singleton.SelectedPiece.GetComponent<GamePieceReference>().ClearMoves();
         GameControl.singleton.MovePiece(GameControl.singleton.SelectedPiece.GetComponent<GamePieceReference>(), pos);
         GameControl.singleton.SelectedPiece = null;
+        GameControl.singleton.IncActions();
     }
 }

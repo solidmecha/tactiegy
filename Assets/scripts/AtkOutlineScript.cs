@@ -7,5 +7,6 @@ public class AtkOutlineScript : MonoBehaviour {
     {
         GameControl.singleton.SelectedPiece.GetComponent<GamePieceReference>().ClearMoves();
         GameControl.singleton.Capture(Target);
+        GameControl.singleton.IncActions();
     }
 }

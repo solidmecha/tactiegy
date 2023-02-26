@@ -32,6 +32,8 @@ public class GameControl : MonoBehaviour {
     public GameObject SelectedPiece;
     public GameObject GameInfoPanel;
     public InputField SeedVal;
+    public List<int[]> MoveList;
+    public List<int[]> StartPositions;
 
     public void ChangeActionCount()
     {
@@ -132,19 +134,22 @@ public class GameControl : MonoBehaviour {
 
     public void PlacePiece(PieceScript P, int x, int y)
     {
-        GamePieceReference g = (Instantiate(GamePiece, (Vector2)Board.transform.position + new Vector2(x, y) + new Vector2(.5f, .5f), Quaternion.identity) as GameObject).GetComponent<GamePieceReference>();
-        GamePiecesOnBoard.Add(g);
-        g.Def = P.Def;
-        g.playerOne = P.playerOne;
-        g.index=P.Index;
-        g.GetComponent<SpriteRenderer>().sprite = P.GetComponent<SpriteRenderer>().sprite;
-        g.AtkDefText = g.transform.GetChild(8).GetChild(0).GetComponent<Text>();
-        g.RangedText = g.transform.GetChild(8).GetChild(1).GetComponent<Text>();
-        g.NameText = g.transform.GetChild(8).GetChild(2).GetComponent<Text>();
-        g.BoardPos[0] = x;
-        g.BoardPos[1] = y;
-        UpdateGamePiece(g);
-        g.transform.SetParent(Board.transform);
+        if (x < (int)BoardSizeSlider.value && y < (int)BoardSizeSlider.value)
+        {
+            GamePieceReference g = (Instantiate(GamePiece, (Vector2)Board.transform.position + new Vector2(x, y) + new Vector2(.5f, .5f), Quaternion.identity) as GameObject).GetComponent<GamePieceReference>();
+            GamePiecesOnBoard.Add(g);
+            g.Def = P.Def;
+            g.playerOne = P.playerOne;
+            g.index = P.Index;
+            g.GetComponent<SpriteRenderer>().sprite = P.GetComponent<SpriteRenderer>().sprite;
+            g.AtkDefText = g.transform.GetChild(8).GetChild(0).GetComponent<Text>();
+            g.RangedText = g.transform.GetChild(8).GetChild(1).GetComponent<Text>();
+            g.NameText = g.transform.GetChild(8).GetChild(2).GetComponent<Text>();
+            g.BoardPos[0] = x;
+            g.BoardPos[1] = y;
+            UpdateGamePiece(g);
+            g.transform.SetParent(Board.transform);
+        }
     }
 
     public void StartGame()
@@ -161,10 +166,12 @@ public class GameControl : MonoBehaviour {
         {
             BoardHasPiece[i] = new bool[(int)BoardSizeSlider.value];
         }
+        StartPositions = new List<int[]>();
         foreach(GamePieceReference g in GamePiecesOnBoard)
         {
             BoardHasPiece[g.BoardPos[0]][g.BoardPos[1]] = true;
             g.GetComponent<Collider2D>().enabled = true;
+            StartPositions.Add(new int[3] { g.BoardPos[0], g.BoardPos[1], g.index });
         }
         foreach (PieceScript p in Pieces)
             p.PieceVal();
@@ -175,6 +182,34 @@ public class GameControl : MonoBehaviour {
         }
         ActionsCount[0] = ActionsCount[1] - 1;
         IncActions();
+    }
+
+    public void ReturnToEdit()
+    {
+        if(SelectedPiece!=null)
+        {
+            SelectedPiece.GetComponent<GamePieceReference>().ClearMoves();
+            SelectedPiece=null;
+        }
+        foreach (GamePieceReference g in GameControl.singleton.GamePiecesOnBoard)
+        {
+            if (g.index > -1)
+                DestroyImmediate(g.gameObject);
+        }
+        CleanGamePieceList();
+        GamePiecesOnBoard[0].gameObject.SetActive(true);
+        GamePiecesOnBoard[1].gameObject.SetActive(true);
+        foreach (int[] ia in StartPositions)
+        {
+            if (ia[2] > -1)
+                PlacePiece(Pieces[ia[2]], ia[0], ia[1]);
+        }
+        transform.position = Vector2.zero;
+        CurrentMode = GameMode.Edit;
+        Board.transform.position = new Vector2(-2.08f, -4.983608f);
+        Board.GetComponent<BoxCollider2D>().enabled = true;
+        GameInfoPanel.transform.position = new Vector3(-100, -100, -100);
+        
     }
 
     public void SetSeed()
@@ -207,7 +242,6 @@ public class GameControl : MonoBehaviour {
             P.index += 16;
             UpdateGamePiece(P);
         }
-        IncActions();
     }
 
     public void Capture(GamePieceReference T)
@@ -217,7 +251,7 @@ public class GameControl : MonoBehaviour {
         T.Def-=Pieces[SelectedPiece.GetComponent<GamePieceReference>().index].Atk;
         if(T.Def<=0)
         {
-            if(T.index==-1)
+            if(T.index<0)
             {
                 CurrentMode = GameMode.Over;
                 if(playerOne)
@@ -226,8 +260,7 @@ public class GameControl : MonoBehaviour {
                     GetComponent<ClockScript>().TimeText[1].text = "Player 2 Wins";
                 isBot[0] = false;
                 isBot[1] = false;
-                DestroyImmediate(T.gameObject);
-                CleanGamePieceList();
+                T.gameObject.SetActive(false);
                 ActionsCount[0]--;
                 MovePiece(SelectedPiece.GetComponent<GamePieceReference>(), T.BoardPos);
             }
@@ -236,7 +269,6 @@ public class GameControl : MonoBehaviour {
                 BoardHasPiece[T.BoardPos[0]][T.BoardPos[1]]=false;
                 DestroyImmediate(T.gameObject);
                 CleanGamePieceList();
-                IncActions();
             }
             else
             {
@@ -249,7 +281,7 @@ public class GameControl : MonoBehaviour {
         {
             T.ShowDamage();
             if (!Pieces[SelectedPiece.GetComponent<GamePieceReference>().index].isRanged
-                && (Mathf.Abs(T.BoardPos[0]-SelectedPiece.GetComponent<GamePieceReference>().BoardPos[0])>1 ||
+                && (Mathf.Abs(T.BoardPos[0] - SelectedPiece.GetComponent<GamePieceReference>().BoardPos[0]) > 1 ||
                 Mathf.Abs(T.BoardPos[1] - SelectedPiece.GetComponent<GamePieceReference>().BoardPos[1]) > 1))
             {
                 int x = T.BoardPos[0] - SelectedPiece.GetComponent<GamePieceReference>().BoardPos[0];
@@ -260,12 +292,10 @@ public class GameControl : MonoBehaviour {
                     x = 1;
                 if (y < 0)
                     y = -1;
-                if(y > 0)
+                if (y > 0)
                     y = 1;
                 MovePiece(SelectedPiece.GetComponent<GamePieceReference>(), new int[2] { T.BoardPos[0] - x, T.BoardPos[1] - y });
             }
-            else
-                IncActions();
         }
     }
 
@@ -317,5 +347,7 @@ public class GameControl : MonoBehaviour {
 	void Update () {
         if (Input.GetKeyDown(KeyCode.R))
             Application.LoadLevel(0);
+        else if (Input.GetKeyDown(KeyCode.E) && CurrentMode != GameMode.Edit)
+            ReturnToEdit();
 	}
 }
